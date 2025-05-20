@@ -2,95 +2,133 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <title>Tepthon - استخراج الجلسة</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-            padding-top: 60px;
-            background-color: #111;
-            color: white;
-        }
-
-        input, button {
-            padding: 10px;
-            margin: 8px;
-            width: 80%;
-            max-width: 300px;
-            border-radius: 5px;
-            border: none;
-        }
-
-        button {
-            background-color: #0f0;
-            font-weight: bold;
-            cursor: pointer;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Tepthon | استخراج الجلسة</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      padding-top: 60px;
+    }
+    .container {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 400px;
+      margin: auto;
+      box-shadow: 0 0 20px rgba(0,255,0,0.4);
+    }
+    input, button {
+      width: 90%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    input {
+      background: #fff;
+      color: #000;
+    }
+    button {
+      background-color: #00ff88;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #00cc6a;
+    }
+    h1 {
+      color: #00ff88;
+      animation: fadeInDown 1s ease;
+    }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
 
-<h1 style="color:#0f0;">Tepthon</h1>
-<p>استخراج جلسة تليثون</p>
+<h1>Tepthon</h1>
+<div class="container">
+  <input type="text" id="phone" placeholder="رقم الهاتف الدولي" />
+  <input type="text" id="api_id" placeholder="API ID" />
+  <input type="text" id="api_hash" placeholder="API HASH" />
+  <button onclick="sendCode()">إرسال الكود</button>
 
-<input type="text" id="phone" placeholder="رقم الهاتف الدولي"><br>
-<input type="text" id="api_id" placeholder="API ID"><br>
-<input type="text" id="api_hash" placeholder="API HASH"><br>
-<button onclick="sendCode()">إرسال الكود</button><br>
-
-<input type="text" id="code" placeholder="رمز التحقق"><br>
-<input type="text" id="password" placeholder="كلمة المرور (إن وجدت)"><br>
-<button onclick="verifyCode()">استخراج الجلسة</button>
+  <input type="text" id="code" placeholder="رمز التحقق" />
+  <input type="text" id="password" placeholder="كلمة المرور (إن وجدت)" />
+  <button onclick="verifyCode()">استخراج الجلسة</button>
+</div>
 
 <script>
 let phone_code_hash = "";
 
 function sendCode() {
-    const phone = document.getElementById("phone").value;
-    const api_id = document.getElementById("api_id").value;
-    const api_hash = document.getElementById("api_hash").value;
+  const phone = document.getElementById("phone").value;
+  const api_id = document.getElementById("api_id").value;
+  const api_hash = document.getElementById("api_hash").value;
 
-    fetch("/send-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, api_id, api_hash })
-    })
-    .then(res => res.json())
-    .then(data => {
-        phone_code_hash = data.phone_code_hash;
-        alert("تم إرسال الكود!");
-    });
+  if (!phone || !api_id || !api_hash) {
+    alert("يرجى تعبئة كل الحقول");
+    return;
+  }
+
+  fetch("/send-code", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, api_id, api_hash })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.phone_code_hash) {
+      phone_code_hash = data.phone_code_hash;
+      alert("تم إرسال الكود!");
+    } else {
+      alert("خطأ: " + JSON.stringify(data));
+    }
+  })
+  .catch(err => {
+    alert("حدث خطأ أثناء الإرسال:
+" + err.message);
+  });
 }
 
 function verifyCode() {
-    const phone = document.getElementById("phone").value;
-    const api_id = document.getElementById("api_id").value;
-    const api_hash = document.getElementById("api_hash").value;
-    const code = document.getElementById("code").value;
-    const password = document.getElementById("password").value;
+  const phone = document.getElementById("phone").value;
+  const api_id = document.getElementById("api_id").value;
+  const api_hash = document.getElementById("api_hash").value;
+  const code = document.getElementById("code").value;
+  const password = document.getElementById("password").value;
 
-    fetch("/verify-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            phone,
-            api_id,
-            api_hash,
-            code,
-            password,
-            phone_code_hash
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.session) {
-            alert("جلسة:
+  if (!phone || !api_id || !api_hash || !code || !phone_code_hash) {
+    alert("يرجى تعبئة كل الحقول مع الكود.");
+    return;
+  }
+
+  fetch("/verify-code", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, api_id, api_hash, code, password, phone_code_hash })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.session) {
+      alert("الجلسة:
 " + data.session);
-        } else {
-            alert("خطأ: " + data.error);
-        }
-    });
+    } else {
+      alert("فشل التحقق:
+" + data.error);
+    }
+  })
+  .catch(err => {
+    alert("فشل الاتصال:
+" + err.message);
+  });
 }
 </script>
 
