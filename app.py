@@ -1,8 +1,9 @@
 import os
 import asyncio
 from flask import Flask, request, jsonify, render_template
-from telethon.sync import TelegramClient
+from telethon import TelegramClient
 from telethon.sessions import StringSession
+from telethon.errors import SessionPasswordNeededError
 import pytz
 from datetime import datetime
 
@@ -62,18 +63,17 @@ def verify_code():
         client = TelegramClient(session, api_id, api_hash)
         await client.connect()
         try:
-            if password:
-                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash, password=password)
-            else:
-                try:
-                    await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
-                except Exception as err:
-                    if "password" in str(err).lower():
-                        return {"error": "تم تفعيل التحقق بخطوتين. يرجى إدخال كلمة المرور."}
-                    else:
-                        raise err
+            await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+        except SessionPasswordNeededError:
+            if not password:
+                return {"error": "تم تفعيل التحقق بخطوتين. يرجى إدخال كلمة المرور."}
+            try:
+                await client.sign_in(password=password)
+            except Exception as pw_error:
+                return {"error": f"كلمة المرور غير صحيحة: {str(pw_error)}"}
         except Exception as e:
             return {"error": str(e)}
+
         string_session = session.save()
         msg = f"تم استخراج الجلسة بواسطة @Tepthon\n\nالكود: `{code}`\n**ملاحظة: لا تشارك الكود مع أحد**"
         await client.send_message("me", msg, parse_mode="markdown")
