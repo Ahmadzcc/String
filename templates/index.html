@@ -87,7 +87,7 @@ function sendCode() {
   .then(data => {
     if (data.phone_code_hash) {
       phone_code_hash = data.phone_code_hash;
-      alert("تم إرسال الكود!");
+      alert("تم إرسال الكود!"); console.log("CODE SENT OK:", data);
     } else {
       alert("خطأ: " + JSON.stringify(data));
     }
