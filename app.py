@@ -55,6 +55,7 @@ def verify_code():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         session = loop.run_until_complete(run())
+        print("SESSION GENERATED:", session)
         return jsonify({"session": session})
     except Exception as e:
         return jsonify({"error": str(e)})
