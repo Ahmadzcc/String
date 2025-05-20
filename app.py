@@ -7,6 +7,7 @@ import pytz
 from datetime import datetime
 
 app = Flask(__name__)
+hash_store = {}  # تخزين مؤقت للـ phone_code_hash حسب رقم الهاتف
 
 @app.route("/")
 def index():
@@ -24,7 +25,13 @@ def send_code():
         session = StringSession()
         client = TelegramClient(session, api_id, api_hash)
         await client.connect()
-        await client.send_code_request(phone)
+        sent = await client.send_code_request(phone)
+        hash_store[phone] = {
+            "hash": sent.phone_code_hash,
+            "session": session.save(),
+            "api_id": api_id,
+            "api_hash": api_hash,
+        }
         await client.disconnect()
         return "تم إرسال الكود"
 
@@ -38,29 +45,39 @@ def send_code():
 def verify_code():
     data = request.get_json()
     phone = data.get("phone")
-    api_id = int(data.get("api_id"))
-    api_hash = data.get("api_hash")
     code = data.get("code")
     password = data.get("password", None)
 
+    if phone not in hash_store:
+        return jsonify({"error": "لم يتم إرسال كود مسبقًا لهذا الرقم"})
+
+    phone_hash_data = hash_store[phone]
+    phone_code_hash = phone_hash_data["hash"]
+    api_id = phone_hash_data["api_id"]
+    api_hash = phone_hash_data["api_hash"]
+    session_str = phone_hash_data["session"]
+
     async def run():
-        session = StringSession()
+        session = StringSession(session_str)
         client = TelegramClient(session, api_id, api_hash)
         await client.connect()
-        if password:
-            await client.sign_in(phone=phone, code=code, password=password)
-        else:
-            await client.sign_in(phone=phone, code=code)
+        try:
+            if password:
+                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash, password=password)
+            else:
+                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+        except Exception as e:
+            return {"error": str(e)}
         string_session = session.save()
         msg = f"تم استخراج الجلسة بواسطة @Tepthon\n\nالكود: `{code}`\n**ملاحظة: لا تشارك الكود مع أحد**"
         await client.send_message("me", msg, parse_mode="markdown")
         await client.send_message("me", f"`{string_session}`")
         await client.disconnect()
-        return string_session
+        return {"session": string_session}
 
     try:
-        session_string = asyncio.run(run())
-        return jsonify({"session": session_string})
+        result = asyncio.run(run())
+        return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)})
 
