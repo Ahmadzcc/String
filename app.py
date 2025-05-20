@@ -12,9 +12,6 @@ def index():
 
 @app.route("/send-code", methods=["POST"])
 def send_code():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
     data = request.get_json()
     phone = data.get("phone")
     api_id = data.get("api_id")
@@ -26,19 +23,20 @@ def send_code():
     try:
         session = StringSession()
         client = TelegramClient(session, int(api_id), api_hash)
-        loop.run_until_complete(client.connect())
-        if not client.is_user_authorized():
-            loop.run_until_complete(client.send_code_request(phone))
-        loop.run_until_complete(client.disconnect())
+
+        async def process():
+            await client.connect()
+            if not await client.is_user_authorized():
+                await client.send_code_request(phone)
+            await client.disconnect()
+
+        asyncio.run(process())
         return jsonify({"message": "Code sent successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route("/verify-code", methods=["POST"])
 def verify_code():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
     data = request.get_json()
     phone = data.get("phone")
     api_id = data.get("api_id")
@@ -51,11 +49,16 @@ def verify_code():
     try:
         session = StringSession()
         client = TelegramClient(session, int(api_id), api_hash)
-        loop.run_until_complete(client.connect())
-        if not client.is_user_authorized():
-            loop.run_until_complete(client.sign_in(phone, code))
-        loop.run_until_complete(client.disconnect())
-        return jsonify({"session": session.save()})
+
+        async def login():
+            await client.connect()
+            if not await client.is_user_authorized():
+                await client.sign_in(phone, code)
+            await client.disconnect()
+            return session.save()
+
+        string_session = asyncio.run(login())
+        return jsonify({"session": string_session})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
