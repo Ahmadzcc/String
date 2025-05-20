@@ -1,66 +1,31 @@
+
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <title>Tepthon</title>
-    <style>
-        body {
-            background: #000;
-            color: #0f0;
-            font-family: Tahoma, sans-serif;
-            text-align: center;
-            padding-top: 100px;
-        }
-        input, button {
-            padding: 10px;
-            margin: 5px;
-            font-size: 16px;
-        }
-    </style>
 </head>
-<body>
+<body style="background:#111; color:#0f0; text-align:center; padding-top:50px;">
     <h1>Tepthon</h1>
     <p>استخراج جلسة تليثون</p>
-    <input id="phone" placeholder="رقم الهاتف"><br>
-    <input id="api_id" placeholder="API ID"><br>
-    <input id="api_hash" placeholder="API HASH"><br>
-    <button onclick="sendCode()">إرسال الكود</button><br><br>
-    <input id="code" placeholder="الكود"><br>
-    <button onclick="verifyCode()">استخراج الجلسة</button>
-
+    <input id="phone" placeholder="رقم الهاتف"><br><br>
+    <input id="api_id" placeholder="API ID"><br><br>
+    <input id="api_hash" placeholder="API HASH"><br><br>
+    <button onclick="sendCode()">إرسال الكود</button>
     <script>
-        async function sendCode() {
-            const res = await fetch("/send-code", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    phone: document.getElementById("phone").value,
-                    api_id: document.getElementById("api_id").value,
-                    api_hash: document.getElementById("api_hash").value
-                })
-            });
-            const data = await res.json();
-            alert(data.message || data.error);
-        }
+    async function sendCode() {
+        const phone = document.getElementById('phone').value;
+        const api_id = document.getElementById('api_id').value;
+        const api_hash = document.getElementById('api_hash').value;
 
-        async function verifyCode() {
-            const res = await fetch("/verify-code", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    phone: document.getElementById("phone").value,
-                    api_id: document.getElementById("api_id").value,
-                    api_hash: document.getElementById("api_hash").value,
-                    code: document.getElementById("code").value
-                })
-            });
-            const data = await res.json();
-            if (data.session) {
-                alert("Session: " + data.session);
-            } else {
-                alert(data.error);
-            }
-        }
+        const response = await fetch('/send_code', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ phone, api_id, api_hash })
+        });
+        const result = await response.json();
+        alert(result.message);
+    }
     </script>
 </body>
 </html>
