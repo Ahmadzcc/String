@@ -41,6 +41,10 @@
             background-color: #00ff88;
             color: #000;
             font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #00e077;
         }
         #sessionBox {
             margin-top: 10px;
@@ -63,6 +67,7 @@
         <input id="phone" placeholder="رقم الهاتف"><br>
         <input id="api_id" placeholder="API ID"><br>
         <input id="api_hash" placeholder="API HASH"><br>
+        <button onclick="sendCode()">إرسال الكود</button><br>
         <input id="code" placeholder="رمز التحقق"><br>
         <input id="password" placeholder="كلمة المرور (إن وُجد)"><br>
         <button onclick="verify()">استخراج الجلسة</button>
@@ -70,6 +75,21 @@
     </div>
 
     <script>
+        async function sendCode() {
+            const phone = document.getElementById("phone").value;
+            const api_id = document.getElementById("api_id").value;
+            const api_hash = document.getElementById("api_hash").value;
+
+            const res = await fetch("/send-code", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone, api_id, api_hash })
+            });
+
+            const data = await res.json();
+            alert(data.message || data.error);
+        }
+
         async function verify() {
             const phone = document.getElementById("phone").value;
             const api_id = document.getElementById("api_id").value;
