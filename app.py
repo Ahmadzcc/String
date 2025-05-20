@@ -7,7 +7,7 @@ import pytz
 from datetime import datetime
 
 app = Flask(__name__)
-hash_store = {}  # تخزين مؤقت للـ phone_code_hash حسب رقم الهاتف
+hash_store = {}
 
 @app.route("/")
 def index():
@@ -46,7 +46,7 @@ def verify_code():
     data = request.get_json()
     phone = data.get("phone")
     code = data.get("code")
-    password = data.get("password", None)
+    password = data.get("password", "").strip()
 
     if phone not in hash_store:
         return jsonify({"error": "لم يتم إرسال كود مسبقًا لهذا الرقم"})
@@ -65,7 +65,13 @@ def verify_code():
             if password:
                 await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash, password=password)
             else:
-                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+                try:
+                    await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+                except Exception as err:
+                    if "password" in str(err).lower():
+                        return {"error": "تم تفعيل التحقق بخطوتين. يرجى إدخال كلمة المرور."}
+                    else:
+                        raise err
         except Exception as e:
             return {"error": str(e)}
         string_session = session.save()
